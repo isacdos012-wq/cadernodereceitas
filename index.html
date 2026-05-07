@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Caderno de Receitas</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+
+  <style>
+    :root {
+      --cream:      #F8F2E6;
+      --cream-dark: #EDE3CF;
+      --terra:      #B85C38;
+      --terra-dark: #8C3F22;
+      --terra-light:#D4855E;
+      --olive:      #2C3A1E;
+      --olive-mid:  #4A5C32;
+      --sand:       #D9C4A0;
+      --text:       #1E1A14;
+      --text-muted: #6B5D48;
+      --white:      #FFFFFF;
+      --danger:     #C0392B;
+      --shadow-sm:  0 2px 8px rgba(44,26,8,.10);
+      --shadow-md:  0 6px 24px rgba(44,26,8,.15);
+      --shadow-lg:  0 16px 48px rgba(44,26,8,.22);
+      --radius:     16px;
+      --radius-sm:  8px;
+      --font-display:'Playfair Display', Georgia, serif;
+      --font-body:   'DM Sans', sans-serif;
+      --transition:  .25s cubic-bezier(.4,0,.2,1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--cream);
+      color: var(--text);
+      min-height: 100vh;
+      background-image:
+        radial-gradient(ellipse at 80% 0%, rgba(184,92,56,.08) 0%, transparent 60%),
+        radial-gradient(ellipse at 20% 100%, rgba(74,92,50,.06) 0%, transparent 60%);
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--olive);
+      color: var(--cream);
+      padding: 0 clamp(1rem, 5vw, 4rem);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--shadow-md);
+    }
+    .header-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      height: 72px;
+    }
+    .logo { display: flex; align-items: center; gap: .75rem; }
+    .logo-icon {
+      width: 38px; height: 38px;
+      background: var(--terra);
+      border-radius: 50%;
+      display: grid; place-items: center;
+      font-size: 1.2rem; flex-shrink: 0;
+    }
+    .logo-text {
+      font-family: var(--font-display);
+      font-size: clamp(1.1rem, 2.5vw, 1.45rem);
+      font-weight: 700; letter-spacing: -.01em; line-height: 1.1;
+    }
+    .logo-text span {
+      display: block; font-size: .75em;
+      font-weight: 400; font-style: italic; opacity: .65;
+    }
+    .search-wrapper { flex: 1; max-width: 400px; position: relative; }
+    .search-wrapper input {
+      width: 100%;
+      padding: .55rem 1rem .55rem 2.6rem;
+      border: none; border-radius: 100px;
+      background: rgba(255,255,255,.1);
+      color: var(--cream); font-family: var(--font-body);
+      font-size: .9rem; outline: none;
+      transition: background var(--transition);
+    }
+    .search-wrapper input::placeholder { color: rgba(248,242,230,.45); }
+    .search-wrapper input:focus { background: rgba(255,255,255,.18); }
+    .search-icon {
+      position: absolute; left: .85rem; top: 50%;
+      transform: translateY(-50%);
+      opacity: .5; pointer-events: none; font-size: .95rem;
+    }
+    .btn-new {
+      display: flex; align-items: center; gap: .5rem;
+      background: var(--terra); color: var(--white);
+      border: none; padding: .6rem 1.25rem; border-radius: 100px;
+      font-family: var(--font-body); font-size: .9rem; font-weight: 600;
+      cursor: pointer; white-space: nowrap;
+      transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+    }
+    .btn-new:hover {
+      background: var(--terra-dark); transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(184,92,56,.4);
+    }
+    .btn-new:active { transform: translateY(0); }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--olive-mid) 0%, var(--olive) 100%);
+      color: var(--cream); text-align: center;
+      padding: 3.5rem 1.5rem 3rem;
+    }
+    .hero h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 700; line-height: 1.15; margin-bottom: .6rem;
+    }
+    .hero h1 em { color: var(--terra-light); font-style: italic; }
+    .hero p { color: rgba(248,242,230,.65); font-size: 1rem; font-weight: 300; }
+
+    /* ── MAIN ── */
+    .main {
+      max-width: 1200px; margin: 0 auto;
+      padding: 2.5rem clamp(1rem, 4vw, 2.5rem) 4rem;
+    }
+    .toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem;
+    }
+    .count-label { font-size: .85rem; color: var(--text-muted); font-weight: 500; }
+    .count-label strong { color: var(--terra); }
+
+    /* ── GRID DE CARDS ── */
+    #recipes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.75rem;
+    }
+    .recipe-card {
+      background: var(--white); border-radius: var(--radius);
+      overflow: hidden; box-shadow: var(--shadow-sm);
+      transition: transform var(--transition), box-shadow var(--transition);
+      animation: cardIn .4s ease both;
+      display: flex; flex-direction: column;
+    }
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .recipe-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); }
+    .card-img-wrap {
+      width: 100%; aspect-ratio: 16/10;
+      overflow: hidden; background: var(--cream-dark); position: relative;
+    }
+    .card-img-wrap img {
+      width: 100%; height: 100%; object-fit: cover;
+      transition: transform .5s ease; display: block;
+    }
+    .recipe-card:hover .card-img-wrap img { transform: scale(1.06); }
+    .card-no-img {
+      width: 100%; height: 100%;
+      display: grid; place-items: center; font-size: 3rem;
+      background: linear-gradient(135deg, var(--cream-dark), var(--sand));
+      color: var(--sand);
+    }
+    .card-body {
+      padding: 1.25rem 1.25rem 1rem; flex: 1;
+      display: flex; flex-direction: column; gap: .5rem;
+    }
+    .card-title {
+      font-family: var(--font-display); font-size: 1.15rem;
+      font-weight: 700; line-height: 1.25; color: var(--olive);
+    }
+    .card-desc {
+      font-size: .88rem; color: var(--text-muted); line-height: 1.55; flex: 1;
+      display: -webkit-box; -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .card-date { font-size: .75rem; color: var(--sand); font-weight: 500; margin-top: .25rem; }
+    .card-actions {
+      display: flex; gap: .5rem;
+      padding: .75rem 1.25rem 1.25rem;
+      border-top: 1px solid var(--cream-dark); margin-top: auto;
+    }
+    .btn-icon {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      gap: .4rem; padding: .5rem .75rem; border-radius: var(--radius-sm);
+      border: none; font-family: var(--font-body); font-size: .82rem;
+      font-weight: 600; cursor: pointer;
+      transition: background var(--transition), color var(--transition), transform var(--transition);
+    }
+    .btn-edit { background: var(--cream); color: var(--olive-mid); }
+    .btn-edit:hover { background: var(--olive-mid); color: var(--white); transform: translateY(-1px); }
+    .btn-delete { background: #FDE8E4; color: var(--danger); }
+    .btn-delete:hover { background: var(--danger); color: var(--white); transform: translateY(-1px); }
+
+    /* ── ESTADO VAZIO ── */
+    .empty-state {
+      text-align: center; padding: 5rem 1rem;
+      grid-column: 1 / -1; animation: cardIn .5s ease both;
+    }
+    .empty-state .empty-icon { font-size: 4rem; margin-bottom: 1rem; opacity: .45; }
+    .empty-state h3 {
+      font-family: var(--font-display); font-size: 1.5rem;
+      color: var(--text-muted); margin-bottom: .5rem;
+    }
+    .empty-state p { font-size: .9rem; color: var(--text-muted); opacity: .7; }
+
+    /* ── SPINNER ── */
+    .loader-wrap { grid-column: 1 / -1; display: flex; justify-content: center; padding: 4rem; }
+    .spinner {
+      width: 44px; height: 44px;
+      border: 3px solid var(--cream-dark); border-top-color: var(--terra);
+      border-radius: 50%; animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── MODAL OVERLAY ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(28,20,10,.55); backdrop-filter: blur(4px);
+      z-index: 500; align-items: center; justify-content: center;
+      padding: 1rem; animation: fadeIn .2s ease;
+    }
+    .modal-overlay.active { display: flex; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .modal {
+      background: var(--white); border-radius: var(--radius);
+      width: 100%; max-width: 560px; max-height: 92vh; overflow-y: auto;
+      box-shadow: var(--shadow-lg);
+      animation: slideUp .3s cubic-bezier(.4,0,.2,1) both;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(32px) scale(.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.5rem 1.75rem 1rem; border-bottom: 1px solid var(--cream-dark);
+      position: sticky; top: 0; background: var(--white); z-index: 1;
+    }
+    .modal-title {
+      font-family: var(--font-display); font-size: 1.4rem;
+      font-weight: 700; color: var(--olive);
+    }
+    .btn-close {
+      width: 32px; height: 32px; background: var(--cream); border: none;
+      border-radius: 50%; font-size: 1.1rem; cursor: pointer;
+      display: grid; place-items: center; color: var(--text-muted);
+      transition: background var(--transition), transform var(--transition);
+    }
+    .btn-close:hover { background: var(--cream-dark); transform: rotate(90deg); }
+
+    /* Formulário */
+    .modal-body { padding: 1.5rem 1.75rem 2rem; }
+    .form-group { margin-bottom: 1.25rem; }
+    .form-group label {
+      display: block; font-size: .82rem; font-weight: 600;
+      color: var(--olive-mid); text-transform: uppercase;
+      letter-spacing: .06em; margin-bottom: .45rem;
+    }
+    .form-group input, .form-group textarea {
+      width: 100%; padding: .75rem 1rem;
+      border: 1.5px solid var(--cream-dark); border-radius: var(--radius-sm);
+      font-family: var(--font-body); font-size: .95rem; color: var(--text);
+      background: var(--cream); outline: none; resize: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .form-group input:focus, .form-group textarea:focus {
+      border-color: var(--terra);
+      box-shadow: 0 0 0 3px rgba(184,92,56,.15);
+      background: var(--white);
+    }
+    .form-group textarea { min-height: 120px; }
+
+    /* Upload */
+    .upload-area {
+      border: 2px dashed var(--sand); border-radius: var(--radius-sm);
+      padding: 1.5rem 1rem; text-align: center; cursor: pointer;
+      background: var(--cream); position: relative; overflow: hidden;
+      transition: border-color var(--transition), background var(--transition);
+    }
+    .upload-area:hover, .upload-area.drag-over {
+      border-color: var(--terra); background: rgba(184,92,56,.04);
+    }
+    .upload-area input[type="file"] {
+      position: absolute; inset: 0; opacity: 0;
+      cursor: pointer; width: 100%; height: 100%;
+    }
+    .upload-placeholder { pointer-events: none; }
+    .upload-icon { font-size: 2rem; margin-bottom: .5rem; opacity: .5; }
+    .upload-label { font-size: .88rem; color: var(--text-muted); }
+    .upload-label strong { color: var(--terra); }
+
+    /* Preview */
+    .img-preview { display: none; position: relative; }
+    .img-preview img {
+      width: 100%; max-height: 220px; object-fit: cover;
+      border-radius: var(--radius-sm); display: block;
+    }
+    .img-preview-remove {
+      position: absolute; top: .5rem; right: .5rem;
+      background: rgba(192,57,43,.85); color: white; border: none;
+      border-radius: 50%; width: 28px; height: 28px; font-size: .9rem;
+      cursor: pointer; display: grid; place-items: center;
+      transition: background var(--transition);
+    }
+    .img-preview-remove:hover { background: var(--danger); }
+
+    /* Progresso */
+    .upload-progress { display: none; margin-top: .75rem; }
+    .progress-bar-wrap {
+      height: 4px; background: var(--cream-dark);
+      border-radius: 100px; overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%; background: var(--terra);
+      border-radius: 100px; width: 0%; transition: width .2s ease;
+    }
+    .progress-label { font-size: .75rem; color: var(--text-muted); margin-top: .3rem; text-align: center; }
+
+    /* Modal footer */
+    .modal-footer {
+      display: flex; gap: .75rem; justify-content: flex-end;
+      padding: 1rem 1.75rem 1.5rem; border-top: 1px solid var(--cream-dark);
+    }
+    .btn-cancel {
+      padding: .65rem 1.25rem; background: var(--cream); border: none;
+      border-radius: 100px; font-family: var(--font-body); font-size: .9rem;
+      font-weight: 600; color: var(--text-muted); cursor: pointer;
+      transition: background var(--transition);
+    }
+    .btn-cancel:hover { background: var(--cream-dark); }
+    .btn-save {
+      padding: .65rem 1.75rem; background: var(--terra); border: none;
+      border-radius: 100px; font-family: var(--font-body); font-size: .9rem;
+      font-weight: 600; color: var(--white); cursor: pointer;
+      display: flex; align-items: center; gap: .5rem;
+      transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+    }
+    .btn-save:hover:not(:disabled) {
+      background: var(--terra-dark); transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(184,92,56,.35);
+    }
+    .btn-save:disabled { opacity: .55; cursor: not-allowed; }
+
+    /* ── TOAST ── */
+    .toast-container {
+      position: fixed; bottom: 2rem; right: 1.5rem;
+      z-index: 999; display: flex; flex-direction: column;
+      gap: .5rem; pointer-events: none;
+    }
+    .toast {
+      background: var(--olive); color: var(--cream);
+      padding: .8rem 1.25rem; border-radius: var(--radius-sm);
+      font-size: .88rem; font-weight: 500; box-shadow: var(--shadow-md);
+      display: flex; align-items: center; gap: .5rem;
+      animation: toastIn .3s ease both; pointer-events: auto;
+    }
+    .toast.error   { background: var(--danger); }
+    .toast.success { background: var(--olive-mid); }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateX(20px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes toastOut { to { opacity: 0; transform: translateX(20px); } }
+
+    /* ── MODAL CONFIRMAÇÃO ── */
+    .confirm-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(28,20,10,.6); backdrop-filter: blur(3px);
+      z-index: 600; align-items: center; justify-content: center; padding: 1rem;
+    }
+    .confirm-overlay.active { display: flex; }
+    .confirm-box {
+      background: var(--white); border-radius: var(--radius);
+      padding: 2rem; max-width: 380px; width: 100%;
+      box-shadow: var(--shadow-lg); text-align: center;
+      animation: slideUp .25s ease both;
+    }
+    .confirm-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+    .confirm-title { font-family: var(--font-display); font-size: 1.2rem; margin-bottom: .5rem; color: var(--olive); }
+    .confirm-msg { font-size: .9rem; color: var(--text-muted); margin-bottom: 1.5rem; line-height: 1.5; }
+    .confirm-actions { display: flex; gap: .75rem; justify-content: center; }
+    .btn-confirm-yes {
+      padding: .6rem 1.5rem; background: var(--danger); color: white;
+      border: none; border-radius: 100px; font-family: var(--font-body);
+      font-weight: 600; font-size: .9rem; cursor: pointer;
+      transition: background var(--transition);
+    }
+    .btn-confirm-yes:hover { background: #a93226; }
+    .btn-confirm-no {
+      padding: .6rem 1.5rem; background: var(--cream); color: var(--text-muted);
+      border: none; border-radius: 100px; font-family: var(--font-body);
+      font-weight: 600; font-size: .9rem; cursor: pointer;
+      transition: background var(--transition);
+    }
+    .btn-confirm-no:hover { background: var(--cream-dark); }
+
+    /* ── RESPONSIVO ── */
+    @media (max-width: 600px) {
+      .search-wrapper { display: none; }
+      .btn-new span { display: none; }
+      .hero { padding: 2.5rem 1rem 2rem; }
+      #recipes-grid { grid-template-columns: 1fr 1fr; gap: 1rem; }
+      .modal { max-height: 100vh; border-radius: var(--radius) var(--radius) 0 0; align-self: flex-end; }
+      .modal-overlay { align-items: flex-end; padding: 0; }
+    }
+    @media (max-width: 400px) {
+      #recipes-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon">🍳</div>
+        <div class="logo-text">
+          Caderno de Receitas
+          <span>suas criações, sempre à mão</span>
+        </div>
+      </div>
+      <div class="search-wrapper">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search-input" placeholder="Buscar receitas…" autocomplete="off" />
+      </div>
+      <button class="btn-new" id="btn-open-modal">
+        ＋ <span>Nova Receita</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero">
+    <h1>Suas receitas, <em>organizadas com amor</em></h1>
+    <p>Adicione, edite e explore suas criações culinárias</p>
+  </section>
+
+  <!-- CONTEÚDO PRINCIPAL -->
+  <main class="main">
+    <div class="toolbar">
+      <p class="count-label" id="count-label">Carregando…</p>
+    </div>
+    <div id="recipes-grid">
+      <div class="loader-wrap"><div class="spinner"></div></div>
+    </div>
+  </main>
+
+  <!-- MODAL ADICIONAR / EDITAR -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-title">Nova Receita</h2>
+        <button class="btn-close" id="btn-close-modal" aria-label="Fechar">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="field-title">Título da Receita *</label>
+          <input type="text" id="field-title" placeholder="Ex: Bolo de laranja da vovó" maxlength="80" />
+        </div>
+        <div class="form-group">
+          <label for="field-desc">Descrição / Ingredientes / Modo de preparo *</label>
+          <textarea id="field-desc" placeholder="Descreva os ingredientes, tempo de preparo e o passo a passo…"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Foto da Receita</label>
+          <div class="upload-area" id="upload-area">
+            <input type="file" id="field-image" accept="image/*" />
+            <div class="upload-placeholder">
+              <div class="upload-icon">🖼️</div>
+              <p class="upload-label">
+                <strong>Clique para escolher</strong> ou arraste uma imagem<br />
+                <small>JPG, PNG ou WEBP — máx. 5 MB</small>
+              </p>
+            </div>
+          </div>
+          <div class="img-preview" id="img-preview">
+            <img id="img-preview-src" src="" alt="Pré-visualização" />
+            <button class="img-preview-remove" id="btn-remove-img" title="Remover imagem">✕</button>
+          </div>
+          <div class="upload-progress" id="upload-progress">
+            <div class="progress-bar-wrap">
+              <div class="progress-bar" id="progress-bar"></div>
+            </div>
+            <p class="progress-label" id="progress-label">Enviando imagem…</p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="btn-cancel">Cancelar</button>
+        <button class="btn-save" id="btn-save">
+          <span id="btn-save-icon">💾</span>
+          <span id="btn-save-label">Salvar Receita</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CONFIRMAÇÃO EXCLUSÃO -->
+  <div class="confirm-overlay" id="confirm-overlay">
+    <div class="confirm-box">
+      <div class="confirm-icon">🗑️</div>
+      <h3 class="confirm-title">Excluir receita?</h3>
+      <p class="confirm-msg">Essa ação é permanente e não poderá ser desfeita. A imagem também será removida.</p>
+      <div class="confirm-actions">
+        <button class="btn-confirm-no" id="btn-confirm-no">Cancelar</button>
+        <button class="btn-confirm-yes" id="btn-confirm-yes">Sim, excluir</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOASTS -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script>
+    /* ─────────────────────────────────────────────────────
+       ⚙️  CONFIGURAÇÃO DO FIREBASE
+       Substitua pelos valores do seu projeto:
+       Console → Configurações do projeto → Seus apps → Web
+    ──────────────────────────────────────────────────────── */
+    const firebaseConfig = {
+      apiKey:            "SUA_API_KEY",
+      authDomain:        "SEU_PROJETO.firebaseapp.com",
+      projectId:         "SEU_PROJETO",
+      storageBucket:     "SEU_PROJETO.appspot.com",
+      messagingSenderId: "SEU_SENDER_ID",
+      appId:             "SEU_APP_ID"
+    };
+
+    /* Inicializa */
+    firebase.initializeApp(firebaseConfig);
+    const db      = firebase.firestore();
+    const storage = firebase.storage();
+    const col     = db.collection("receitas");
+
+    /* ── REFERÊNCIAS DOM ── */
+    const grid          = document.getElementById("recipes-grid");
+    const countLabel    = document.getElementById("count-label");
+    const searchInput   = document.getElementById("search-input");
+    const modalOverlay  = document.getElementById("modal-overlay");
+    const confirmOvly   = document.getElementById("confirm-overlay");
+    const modalTitle    = document.getElementById("modal-title");
+    const fieldTitle    = document.getElementById("field-title");
+    const fieldDesc     = document.getElementById("field-desc");
+    const fieldImage    = document.getElementById("field-image");
+    const uploadArea    = document.getElementById("upload-area");
+    const imgPreview    = document.getElementById("img-preview");
+    const imgPreviewSrc = document.getElementById("img-preview-src");
+    const btnRemoveImg  = document.getElementById("btn-remove-img");
+    const uploadProg    = document.getElementById("upload-progress");
+    const progressBar   = document.getElementById("progress-bar");
+    const progressLabel = document.getElementById("progress-label");
+    const btnSave       = document.getElementById("btn-save");
+    const btnSaveLabel  = document.getElementById("btn-save-label");
+    const btnSaveIcon   = document.getElementById("btn-save-icon");
+    const btnConfirmYes = document.getElementById("btn-confirm-yes");
+    const btnConfirmNo  = document.getElementById("btn-confirm-no");
+
+    /* ── ESTADO ── */
+    let allRecipes    = [];
+    let editingId     = null;
+    let pendingDelete = null;
+    let selectedFile  = null;
+    let currentImgUrl = null;
+
+    /* ── TOAST ── */
+    function showToast(msg, type = "success") {
+      const container = document.getElementById("toast-container");
+      const el = document.createElement("div");
+      el.className = `toast ${type}`;
+      el.innerHTML = `${type === "error" ? "⚠️" : "✅"} ${msg}`;
+      container.appendChild(el);
+      setTimeout(() => {
+        el.style.animation = "toastOut .3s ease forwards";
+        setTimeout(() => el.remove(), 350);
+      }, 3500);
+    }
+
+    /* ── FORMATA DATA ── */
+    function formatDate(ts) {
+      if (!ts) return "";
+      const d = ts.toDate ? ts.toDate() : new Date(ts);
+      return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
+    }
+
+    /* ── ESCAPE HTML ── */
+    function escapeHtml(str = "") {
+      return str.replace(/&/g,"&amp;").replace(/</g,"&lt;")
+                .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+    }
+
+    /* ── RENDERIZA CARDS ── */
+    function renderCards(recipes) {
+      grid.innerHTML = "";
+      const total    = allRecipes.length;
+      const filtered = recipes.length;
+      countLabel.innerHTML = total === filtered
+        ? `<strong>${total}</strong> receita${total !== 1 ? "s" : ""}`
+        : `<strong>${filtered}</strong> de <strong>${total}</strong> receitas encontradas`;
+
+      if (recipes.length === 0) {
+        grid.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">🍽️</div>
+            <h3>${allRecipes.length === 0 ? "Nenhuma receita ainda" : "Nenhum resultado encontrado"}</h3>
+            <p>${allRecipes.length === 0
+              ? "Clique em <strong>Nova Receita</strong> para começar."
+              : "Tente buscar por outro termo."}</p>
+          </div>`;
+        return;
+      }
+
+      recipes.forEach((r, i) => {
+        const card = document.createElement("div");
+        card.className = "recipe-card";
+        card.style.animationDelay = `${i * 0.05}s`;
+        const imgHtml = r.imageUrl
+          ? `<img src="${r.imageUrl}" alt="${escapeHtml(r.title)}" loading="lazy" />`
+          : `<div class="card-no-img">🥘</div>`;
+        card.innerHTML = `
+          <div class="card-img-wrap">${imgHtml}</div>
+          <div class="card-body">
+            <h3 class="card-title">${escapeHtml(r.title)}</h3>
+            <p class="card-desc">${escapeHtml(r.description)}</p>
+            <p class="card-date">📅 ${formatDate(r.createdAt)}</p>
+          </div>
+          <div class="card-actions">
+            <button class="btn-icon btn-edit"   data-id="${r.id}">✏️ Editar</button>
+            <button class="btn-icon btn-delete" data-id="${r.id}">🗑️ Excluir</button>
+          </div>`;
+        grid.appendChild(card);
+      });
+
+      grid.querySelectorAll(".btn-edit")
+          .forEach(btn => btn.addEventListener("click", () => openEdit(btn.dataset.id)));
+      grid.querySelectorAll(".btn-delete")
+          .forEach(btn => btn.addEventListener("click", () => openConfirmDelete(btn.dataset.id)));
+    }
+
+    /* ── BUSCA ── */
+    function applySearch(query = "") {
+      const q = query.toLowerCase().trim();
+      if (!q) return renderCards(allRecipes);
+      renderCards(allRecipes.filter(r =>
+        r.title.toLowerCase().includes(q) || r.description.toLowerCase().includes(q)));
+    }
+    searchInput.addEventListener("input", () => applySearch(searchInput.value));
+
+    /* ── LISTENER FIRESTORE (tempo real) ── */
+    col.orderBy("createdAt", "desc").onSnapshot(snapshot => {
+      allRecipes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      applySearch(searchInput.value);
+    }, err => {
+      console.error("Erro no Firestore:", err);
+      showToast("Erro ao carregar receitas. Verifique o console.", "error");
+      grid.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div>
+        <h3>Erro de conexão</h3><p>Verifique as configurações do Firebase.</p></div>`;
+    });
+
+    /* ── MODAL ABRIR / FECHAR ── */
+    function openModal(title = "Nova Receita") {
+      modalTitle.textContent = title;
+      modalOverlay.classList.add("active");
+      fieldTitle.focus();
+    }
+    function closeModal() {
+      modalOverlay.classList.remove("active");
+      resetForm();
+    }
+    document.getElementById("btn-open-modal").addEventListener("click", () => {
+      editingId = null;
+      openModal("Nova Receita");
+      btnSaveLabel.textContent = "Salvar Receita";
+      btnSaveIcon.textContent  = "💾";
+    });
+    document.getElementById("btn-close-modal").addEventListener("click", closeModal);
+    document.getElementById("btn-cancel").addEventListener("click", closeModal);
+    modalOverlay.addEventListener("click", e => { if (e.target === modalOverlay) closeModal(); });
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape") { closeModal(); closeConfirm(); }
+    });
+
+    /* ── RESET FORMULÁRIO ── */
+    function resetForm() {
+      fieldTitle.value = ""; fieldDesc.value = ""; fieldImage.value = "";
+      selectedFile = null; currentImgUrl = null; editingId = null;
+      imgPreview.style.display = "none"; uploadArea.style.display = "";
+      uploadProg.style.display = "none"; progressBar.style.width  = "0%";
+      btnSave.disabled = false;
+    }
+
+    /* ── PRÉ-VISUALIZAÇÃO ── */
+    function showPreview(src) {
+      imgPreviewSrc.src = src;
+      imgPreview.style.display = "block";
+      uploadArea.style.display = "none";
+    }
+    function hidePreview() {
+      imgPreview.style.display = "none"; uploadArea.style.display = "";
+      imgPreviewSrc.src = ""; selectedFile = null;
+      currentImgUrl = null; fieldImage.value = "";
+    }
+
+    fieldImage.addEventListener("change", e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (file.size > 5 * 1024 * 1024) { showToast("Imagem muito grande. Máximo 5 MB.", "error"); return; }
+      selectedFile = file;
+      const reader = new FileReader();
+      reader.onload = ev => showPreview(ev.target.result);
+      reader.readAsDataURL(file);
+    });
+    btnRemoveImg.addEventListener("click", hidePreview);
+
+    // Drag & Drop
+    uploadArea.addEventListener("dragover",  e => { e.preventDefault(); uploadArea.classList.add("drag-over"); });
+    uploadArea.addEventListener("dragleave", ()  => uploadArea.classList.remove("drag-over"));
+    uploadArea.addEventListener("drop", e => {
+      e.preventDefault(); uploadArea.classList.remove("drag-over");
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith("image/")) {
+        selectedFile = file;
+        const reader = new FileReader();
+        reader.onload = ev => showPreview(ev.target.result);
+        reader.readAsDataURL(file);
+      }
+    });
+
+    /* ── UPLOAD PARA STORAGE ── */
+    async function uploadImage(file) {
+      const ext  = file.name.split(".").pop();
+      const path = `receitas/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+      const ref  = storage.ref(path);
+      const task = ref.put(file);
+      return new Promise((resolve, reject) => {
+        uploadProg.style.display = "block";
+        task.on("state_changed",
+          snap => {
+            const pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
+            progressBar.style.width   = pct + "%";
+            progressLabel.textContent = `Enviando… ${pct}%`;
+          },
+          err => { uploadProg.style.display = "none"; reject(err); },
+          async () => {
+            const url = await task.snapshot.ref.getDownloadURL();
+            uploadProg.style.display = "none";
+            resolve(url);
+          }
+        );
+      });
+    }
+
+    /* ── SALVAR RECEITA ── */
+    btnSave.addEventListener("click", async () => {
+      const title = fieldTitle.value.trim();
+      const desc  = fieldDesc.value.trim();
+      if (!title) { fieldTitle.focus(); showToast("Informe o título da receita.", "error"); return; }
+      if (!desc)  { fieldDesc.focus();  showToast("Informe a descrição.",         "error"); return; }
+      btnSave.disabled = true;
+      btnSaveLabel.textContent = "Salvando…"; btnSaveIcon.textContent = "⏳";
+      try {
+        let imageUrl = currentImgUrl || null;
+        if (selectedFile) imageUrl = await uploadImage(selectedFile);
+        if (editingId) {
+          await col.doc(editingId).update({
+            title, description: desc, imageUrl,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          showToast("Receita atualizada com sucesso! ✨");
+        } else {
+          await col.add({
+            title, description: desc, imageUrl,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          showToast("Receita salva com sucesso! 🎉");
+        }
+        closeModal();
+      } catch (err) {
+        console.error("Erro ao salvar:", err);
+        showToast("Erro ao salvar a receita. Tente novamente.", "error");
+        btnSave.disabled = false;
+        btnSaveLabel.textContent = editingId ? "Atualizar" : "Salvar Receita";
+        btnSaveIcon.textContent  = "💾";
+      }
+    });
+
+    /* ── EDITAR ── */
+    function openEdit(id) {
+      const recipe = allRecipes.find(r => r.id === id);
+      if (!recipe) return;
+      editingId = id; currentImgUrl = recipe.imageUrl || null;
+      fieldTitle.value = recipe.title; fieldDesc.value = recipe.description;
+      recipe.imageUrl ? showPreview(recipe.imageUrl) : hidePreview();
+      openModal("Editar Receita");
+      btnSaveLabel.textContent = "Atualizar"; btnSaveIcon.textContent = "✏️";
+      btnSave.disabled = false;
+    }
+
+    /* ── EXCLUIR ── */
+    function openConfirmDelete(id) { pendingDelete = id; confirmOvly.classList.add("active"); }
+    function closeConfirm() { confirmOvly.classList.remove("active"); pendingDelete = null; }
+    btnConfirmNo.addEventListener("click", closeConfirm);
+    confirmOvly.addEventListener("click", e => { if (e.target === confirmOvly) closeConfirm(); });
+
+    btnConfirmYes.addEventListener("click", async () => {
+      if (!pendingDelete) return;
+      const id = pendingDelete;
+      closeConfirm();
+      try {
+        const recipe = allRecipes.find(r => r.id === id);
+        if (recipe?.imageUrl) {
+          try { await storage.refFromURL(recipe.imageUrl).delete(); }
+          catch (e) { console.warn("Imagem não encontrada no Storage:", e.message); }
+        }
+        await col.doc(id).delete();
+        showToast("Receita excluída.");
+      } catch (err) {
+        console.error("Erro ao excluir:", err);
+        showToast("Erro ao excluir a receita.", "error");
+      }
+    });
+  </script>
+</body>
+</html>
